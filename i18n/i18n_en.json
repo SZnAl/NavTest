@@ -1,0 +1,19 @@
+{
+	"main.searchBoxText": "Search Goods",
+	"navStopBox.navStopTitle": "You have arrived near your destination, navigation is over",
+	"navStopBox.navStopButton": "CLOSE",
+	"StartDestBox.startInput": "Please enter the starting point",
+	"StartDestBox.endInput": "Please enter the endpoint",
+	"search_result.no_result_title": "NO-RESULT",
+	"search_result.resultTitle": "Search Result",
+	"buildingInfo.buildingInfoName": "Building",
+	"buildingInfo.from": "FROM",
+	"buildingInfo.arrive": "Go Here",
+	"navStartBox.startNav": "Start Navigation",
+	"navBottomBar.navBottomBarExit": "EXIT",
+	"navBottomBar.navBottomBarInfoTopStart": "Current",
+	"navBottomBar.navBottomBarInfoTopDest": "DEST",
+	"navBottomBar.navBottomBarInfoBottom": "Residue",
+	"languageBox.title": "EN",
+	"navStopButtonBox.close": "Close"
+}

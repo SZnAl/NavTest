@@ -1,0 +1,91 @@
+stages:
+  - docker_image_build
+  - deploy_to_kubernetes
+  - remove_for_kubernetes
+
+# -------- kaniko start -------- #
+docker_image_build:
+  stage: docker_image_build
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~ /^master*/'
+  variables:
+    registry: ${CI_REGISTRY}
+    registry_auth: ${CI_REGISTRY_AUTH}
+  script:
+    - mkdir -p /kaniko/.docker
+    - echo "{\"auths\":{\"${registry}\":{\"auth\":\"${registry_auth}\"}}}" > /kaniko/.docker/config.json
+    - /kaniko/executor
+      --cache=true
+      --cache-run-layers=false
+      --cache-copy-layers=false
+      --push-retry=3
+      --context ${CI_PROJECT_DIR}
+      --dockerfile ${CI_PROJECT_DIR}/Dockerfile
+      --destination ${CI_REGISTRY_IMAGE}/${CI_PROJECT_NAME}:${CI_COMMIT_SHORT_SHA}-${CI_PIPELINE_IID}
+  tags:
+    - kaniko
+# -------- kaniko end -------- #
+
+# -------- helm start -------- #
+helm_deploy:
+  stage: deploy_to_kubernetes
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~ /^master*/'
+  needs:
+    - job: docker_image_build
+  environment:
+    name: ${CI_PROJECT_NAME}
+    url: "https://location-inside-js.superhii.com"
+    on_stop: helm_remove
+  variables:
+    KUBECONFIG: "/root/.kube/local"
+    registry: ${CI_REGISTRY_IMAGE}
+    helm_repo: "local"
+    namespace: "chaohi-public"
+  dependencies: []
+  script:
+    - helm repo update
+    - helm upgrade
+      --install ${CI_PROJECT_NAME} ${helm_repo}/${CI_PROJECT_NAME}
+      --namespace=${namespace}
+      --set image.repository=${registry}/${CI_PROJECT_NAME}
+      --set image.tag=${CI_COMMIT_SHORT_SHA}-${CI_PIPELINE_IID}
+      --set imagePullSecrets="local-registry"
+      --set logs.test="true"
+      --set ingress.enabled="true"
+      --set-string ingress.annotations."nginx\.ingress\.kubernetes\.io/proxy-body-size"=200m
+      --set-string ingress.annotations."nginx\.ingress\.kubernetes\.io/ssl-redirect"="false"
+      --set-string ingress.annotations."external-dns\.alpha\.kubernetes\.io/hostname"="location-inside-js.superhii.com"
+      --set ingress.hosts[0].host="location-inside-js.superhii.com"
+      --set ingress.tls[0].secretName="superhii-com"
+      --set ingress.tls[0].hosts[0]="location-inside-js.superhii.com"
+  retry: 2
+  tags:
+    - helm
+
+helm_remove:
+  stage: remove_for_kubernetes
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~ /^master*/'
+  needs:
+    - job: helm_deploy
+  when: manual
+  allow_failure: true
+  environment:
+    name: ${CI_PROJECT_NAME}
+    action: stop
+  variables:
+    GIT_STRATEGY: none
+    KUBECONFIG: "/root/.kube/local"
+    registry: ${CI_REGISTRY_IMAGE}
+    helm_repo: "local"
+    namespace: "chaohi-public"
+  dependencies: []
+  script:
+    - helm uninstall 
+      --namespace=${namespace}
+      ${CI_PROJECT_NAME}
+  retry: 2
+  tags:
+    - helm
+# -------- helm end -------- #

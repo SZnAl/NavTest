@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>室内定位导航</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+		<script type="text/javascript" src="./js/baidu_tts_cors.js"></script>
+		<script type="text/javascript" src="./js/current-device.min.js"></script>
+		<script src="./js/fengmap.map.min.js"></script>
+		<script src="./js/fengmap.analyser.min.js"></script>
+		<script src="./js/fengmap.plugin.min.js"></script>
+		<script src="./js/layui.js"></script>
+		<script src="./js/jquery-3.6.1.min.js"></script>
+		<script src="./js/language.js"></script>
+		<link rel="stylesheet" href="./css/layui.css" />
+		<link rel="stylesheet" href="./css/index.css" />
+		<link rel="stylesheet" href="./css/toolBarStyle.css" />
+		<link rel="stylesheet" href="./css/customer.css" />
+	</head>
+
+	<body>
+		<!-- loading -->
+		<div id="loading">
+			<div class="loader"></div>
+		</div>
+
+		<!-- 刷新 -->
+		<!-- <div id="refresh" class="refresh">
+			<button type="button" class="layui-btn" onclick="history.go(0)">
+				<i class="layui-icon">&#xe669;</i>
+			</button>
+		</div> -->
+
+		<!-- 通知弹框 -->
+		<div id="notification" class="notificationClass"></div>
+
+		<!-- 主页 - 搜索栏 -->
+		<div id="searchBar" class="searchBar" onclick="handleBtn('openSearchBox')">
+			<i class="layui-icon">&#xe615;</i
+			><span i18n="main.searchBoxText" id="searchBoxText" class="searchBoxText"
+				>搜索商品</span
+			>
+		</div>
+
+		<!-- 关闭按钮 -->
+		<div id="closeMap" onclick="handleBtn('closeMap')">
+			<div class="closeBox"><i class="layui-icon">&#x1006;</i></div>
+		</div>
+
+		<!-- 导航结束 -->
+		<div id="navStopBox">
+			<div class="navStopBoxFlex">
+				<div class="navStopAlert">
+					<div class="navStopAlertBox">
+						<img class="navStopAlertImg" src="./images/navStop.png" alt="" />
+						<div i18n="navStopBox.navStopTitle" class="navStopTitle">
+							您已到达目的地附近，导航结束
+						</div>
+					</div>
+
+					<div class="navStopArriveBox">
+						<span class="navStopCircle"></span
+						><span id="navStopArriveName" class="navStopArriveName">-</span>
+					</div>
+
+					<div class="navStopButtonBox">
+						<div
+							i18n="main.navStopButton"
+							class="navStopButton"
+							onclick="CloseNavStopBox()"
+						>
+							<span i18n="navStopButtonBox.close">关闭</span>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- 搜索框 -->
+		<div id="panel" class="layui-anim layui-anim-down">
+			<!-- 关闭按钮 -->
+			<div id="searchCloseBtn">
+				<div
+					class="searchCloseBtn closeBox"
+					onclick="handleBtn('closeSearchBox')"
+				>
+					<i class="layui-icon">&#x1006;</i>
+				</div>
+			</div>
+
+			<!-- 选择终点后 起终点选择框 -->
+			<div
+				id="StartDestBox"
+				class="layui-tab layui-tab-brief"
+				lay-filter="docDemoTabBrief"
+			>
+				<div class="layui-tab-content">
+					<div class="layui-tab-item layui-show">
+						<div class="startend">
+							<div class="startandendinput">
+								<div id="startBox">
+									<div
+										class="front-input"
+										style="border: 2px solid #7ed321"
+									></div>
+									<input
+										i18n="StartDestBox.startInput"
+										id="startInput"
+										placeholder="请输入起点"
+									/>
+								</div>
+								<div id="startBoxLine" class="divide"></div>
+								<div>
+									<div
+										class="front-input"
+										style="border: 2px solid #ff4c3f"
+									></div>
+									<input
+										i18n="StartDestBox.endInput"
+										id="endInput"
+										placeholder="请输入终点"
+									/>
+								</div>
+							</div>
+							<div class="exchange" onclick="onExchange()"></div>
+						</div>
+
+						<div id="search_result" class="search_result">
+							<div id="no_result" class="no_result">
+								<div id="no_result_image" class="no_result_image"></div>
+								<div
+									i18n="search_result.no_result_title"
+									class="no_result_title"
+								>
+									暂无搜索结果
+								</div>
+							</div>
+							<div id="result" class="result">
+								<div i18n="search_result.resultTitle" class="resultTitle">
+									搜索结果
+								</div>
+								<div id="result_content"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- 建筑物信息 -->
+		<div id="buildingInfo" class="buildingInfo">
+			<div class="buildingClose" onclick="handleBtn('closeBuildingInfo')">
+				<i class="layui-icon buildingCloseIcon">&#x1006;</i>
+			</div>
+			<div class="buildingInfoFlex">
+				<div class="buildingInfoTop">
+					<i class="layui-icon iconRight10">&#xe715;</i
+					><span i18n="buildingInfo.buildingInfoName" id="buildingInfoName"
+						>建筑物</span
+					>
+				</div>
+				<div class="buildingInfoBottom">
+					<button class="buildingInfoBtn fromBtn" onclick="setStart()">
+						<i class="layui-icon iconRight10">&#xe609;</i
+						><span i18n="buildingInfo.from" class="from">从这走</span>
+					</button>
+					<button
+						class="buildingInfoBtn arriveBtn"
+						onclick="setEnd('searchBox')"
+					>
+						<i class="layui-icon iconRight10">&#xe62f;</i
+						><span i18n="buildingInfo.arrive" class="arrive">到这去</span>
+					</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- 开始导航 -->
+		<div id="navStartBox" class="navStartBox">
+			<div class="buildingClose" onclick="handleBtn('cancel')">
+				<i class="layui-icon buildingCloseIcon">&#x1006;</i>
+			</div>
+			<div class="navStartBoxFlex">
+				<button class="navStartBoxBtn" onclick="handleBtn('start')">
+					<i class="layui-icon iconRight10">&#xe609;</i
+					><span i18n="navStartBox.startNav" class="startNav">开始导航</span>
+				</button>
+			</div>
+		</div>
+
+		<!-- 导航信息 -->
+		<div id="navInfo" class="navInfo">
+			<div class="navInfoFlex">
+				<img id="navImg" class="navImg" width="50px" height="50px" alt="" />
+				<span id="navInfoText" class="navInfoText">-</span>
+			</div>
+		</div>
+
+		<!-- 导航中底部信息 -->
+		<div id="navBottomBar" class="navBottomBar">
+			<div
+				i18n="navBottomBar.navBottomBarExit"
+				class="navBottomBarExit"
+				onclick="handleBtn('navExit',true)"
+			>
+				退出
+			</div>
+			<div class="navBottomBarInfo">
+				<div id="navBottomBarInfoTop" class="navBottomBarInfoTop">
+					<span
+						i18n="navBottomBar.navBottomBarInfoTopStart"
+						id="navBottomBarInfoTopStart"
+						>当前</span
+					>
+					<span
+						i18n="navBottomBar.navBottomBarInfoTopDest"
+						id="navBottomBarInfoTopDest"
+						>终点</span
+					>
+				</div>
+				<div
+					i18n="navBottomBar.navBottomBarInfoBottom"
+					id="navBottomBarInfoBottom"
+					class="navBottomBarInfoBottom"
+				>
+					剩余
+				</div>
+			</div>
+		</div>
+
+		<!-- <pre class="fromAndInfo" id="fromAndInfo">fromAndInfo</pre> -->
+
+		<div id="fengmap"></div>
+
+		<!-- 所属楼层 -->
+		<!-- <div class="layui-panel" id="floorTips"></div> -->
+
+		<!-- 中英文切换按钮 -->
+		<div
+			id="languageBox"
+			i18n="languageBox.title"
+			class="languageBox"
+			onclick="setLang()"
+		>
+			中文
+		</div>
+	</body>
+	<script>
+		var testurl = new URL(window.location).href;
+
+		// 创建临时a标签来利用浏览器的URL解析
+		const tempA = document.createElement('a');
+		tempA.href = testurl;
+
+		// 从searchParams中获取参数
+		const searchParams = new URL(tempA.href).searchParams;
+
+		var urlMapID = searchParams.get('mapId');
+		if (urlMapID === null || urlMapID === undefined) {
+			urlMapID = '1600291584273547266';
+		}
+		var defaultLang = searchParams.get('lang');
+		if (defaultLang === null) {
+			defaultLang = 'en';
+		}
+		var distance = searchParams.get('distance');
+		if (distance === null) {
+			distance = 1.5;
+		}
+
+		console.log(urlMapID, 'urlMapID'); // 1599965909188608001
+		console.log(defaultLang, 'defaultLang'); // cn
+		console.log(distance, 'distance'); // 1.5
+		console.log(window.location.origin, 'window.location.href');
+
+		(function () {
+			var TOKEN =
+				'24.2663fe95d09c4a91f44e0d2320ece3a1.2592000.1695955653.282335-36339916'; //30天有效期-2023/08/30
+			var element;
+
+			function fmtts(text) {
+				if (!device) return;
+				var os = device.os;
+
+				if (os === 'ios') {
+					window.speechSynthesis.cancel();
+					var utterThis = new window.SpeechSynthesisUtterance(text);
+					utterThis.volume = 20;
+					utterThis.rate = 1;
+					utterThis.pitch = 1;
+					window.speechSynthesis.speak(utterThis);
+				} else {
+					btts(
+						{
+							tex: text,
+							tok: TOKEN,
+							spd: 6,
+							pit: 5,
+							vol: 15,
+							per: 0,
+							aue: 3,
+							ctp: 1,
+						},
+						{
+							volume: 0.3,
+							autoDestory: true,
+							timeout: 10000,
+							hidden: true,
+							onInit: function (htmlAudioElement) {},
+							onSuccess: function (htmlAudioElement, e) {
+								if (element) {
+									element.pause();
+									element = null;
+								}
+								element = htmlAudioElement;
+								htmlAudioElement.style.display = 'block';
+								htmlAudioElement.play();
+							},
+						}
+					);
+				}
+			}
+
+			window['fmtts'] = fmtts;
+		})();
+
+		var map;
+		var navi;
+		var analyser;
+		var floorInfo;
+		var locationMarker;
+		var offsetDis = 3; // 路径偏移距离，超出该距离重新路线规划 -14
+		var activeBtn; // 选中按钮
+
+		// 国际化
+		$('[i18n]').i18n({
+			defaultLang: defaultLang,
+			filePath: '/i18n/',
+			filePrefix: 'i18n_',
+			fileSuffix: '',
+			forever: true,
+			callback: function () {},
+		});
+
+		var isFinishNav = false; //是否到达终点停止导航
+
+		// 人步行速度 60米/分钟
+		const walkSpeed = 60;
+		const directionImg = {
+			左: 'left.png',
+			左前: 'left-front.png',
+			左后: 'left-back.png',
+			右前: 'right-front.png',
+			右后: 'right-back.png',
+			右: 'right.png',
+			前: 'front.png',
+			终: 'end-icon.png',
+		};
+
+		var searchAnalyser; // 搜索分析对象
+		var routeAnalyser; // 路径分析对象
+		var floorInfos; // 楼层信息
+		var start; // 起点
+		var dest; // 终点
+		var lineMarker; // 路径线
+		var domMarker; // 设置起点  设置终点弹窗
+		var clickPoint; // 点击地图的点坐标
+		var mode = fengmap.FMNaviMode.MODULE_SHORTEST; // 最短路径
+		var priority = fengmap.FMNaviPriority.PRIORITY_LIFTFIRST; // 直梯优先
+		var activeInput;
+		var searchResult;
+		var selectedIndex = -1;
+
+		var objMessage; // 当前坐标 初始值
+		var constraintCoords; //约束后的点位坐标
+
+		// 消息通知
+		function setNotification(text) {
+			const notification = document.getElementById('notification');
+			notification.innerHTML = text;
+			notification.style = 'display:block';
+			notification.style.animation = 'slideDown 0.3s ease-out';
+			setTimeout(() => {
+				notification.style = 'display:none';
+			}, 2000);
+		}
+
+		// 关闭导航结束提示框
+		function CloseNavStopBox() {
+			$('#navStopBox').css('display', 'none');
+		}
+
+		// 点击搜索按钮
+		function clickSearch() {
+			$('#panel').css('display', 'inline');
+		}
+
+		function getCookie(name) {
+			const cookies = document.cookie.split(';');
+			for (let i in cookies) {
+				let cookie = cookies[i].trim();
+				if (cookie.indexOf(name + '=') == 0) {
+					return decodeURIComponent(cookie.substring(name.length + 1));
+				}
+			}
+			return '';
+		}
+
+		// 设置语言
+		function setLang() {
+			if (defaultLang === 'cn') {
+				$('[i18n]').i18n({
+					defaultLang: 'en',
+				});
+				defaultLang = 'en';
+			} else {
+				$('[i18n]').i18n({
+					defaultLang: 'cn',
+				});
+				defaultLang = 'cn';
+			}
+
+			const newURL =
+				window.location.origin +
+				'?lang=' +
+				defaultLang +
+				'&mapId=' +
+				urlMapID +
+				'&distance=' +
+				1.5;
+			window.location.href = newURL;
+		}
+
+		// 隐藏搜索按钮
+		function hideSearch() {
+			// 点击开始导航后搜索框隐藏
+			$('#panel').css('display', 'none');
+			$('#searchBar').css('display', 'block');
+
+			$('#search_result').css('display', 'none');
+			// let closeMap = document.getElementById('closeMap');
+			// closeMap.style = 'display:none';
+		}
+
+		//let message =
+		//	'{"type": "location","data": {"x": 12116094.6042,"y": 4033704.9425,"groupID": 1,"angle": 270}}';
+
+		// 接收安卓数据
+		function androidFromCall(message) {
+			if (message === undefined) {
+				objMessage = {
+					type: 'location',
+					data: { x: 12116097.2594, y: 4033696.5075, groupID: 1, angle: 0 },
+				};
+			} else {
+				objMessage = JSON.parse(message);
+			}
+			// let fromAndInfo = document.getElementById('fromAndInfo');
+			// fromAndInfo.innerHTML = message;
+
+			// objMessage = JSON.parse(message);
+			if (objMessage.type === 'location') {
+				let coords = {
+					x: objMessage.data.x,
+					y: objMessage.data.y,
+					angle: objMessage.data.angle,
+					level: objMessage.data.groupID,
+				};
+				constraintCoords = routeAnalyser.pathConstraint(coords);
+				constraintCoords.angle = objMessage.data.angle;
+				// let fromAndInfo = document.getElementById('fromAndInfo');
+				// fromAndInfo.innerHTML = JSON.stringify(constraintCoords);
+
+				// 移动定位点到当前位置
+				locationMarker.moveTo({
+					x: constraintCoords.coords.x,
+					y: constraintCoords.coords.y,
+					level: constraintCoords.coords.level,
+					animate: true,
+					duration: 1,
+				});
+				// 判断当前是否为导航状态
+				if (navi.naviResult === null || isFinishNav === false) {
+					// 移动定位点到当前位置
+					locationMarker.moveTo({
+						x: constraintCoords.coords.x,
+						y: constraintCoords.coords.y,
+						level: constraintCoords.coords.level,
+						animate: true,
+						duration: 1,
+					});
+					// 定位点旋转至指定角度
+					locationMarker.rotateTo({
+						heading: constraintCoords.angle,
+						// animate: true,
+						// duration: 1,
+					});
+				} else {
+					navi.locate(
+						{
+							x: constraintCoords.coords.x,
+							y: constraintCoords.coords.y,
+							level: constraintCoords.coords.level,
+						},
+						constraintCoords.angle
+					);
+				}
+			}
+		}
+
+		var options = {
+			container: document.getElementById('fengmap'),
+			appName: 'Demo',
+			key: 'c840c775a92f71ec2674e0889ae96fa2',
+			mapID: urlMapID,
+			themeID: '1580453922356207618',
+			level: 1,
+			mapZoom: 22.5,
+			viewMode: fengmap.FMViewMode.MODE_2D,
+			enabledPanRange: true,
+			// visibleLevels: [1, 1],
+			highlightColor: '#2f65ee', //选中后高亮颜色
+		};
+		map = new fengmap.FMMap(options);
+
+		// 建筑物 地图显示语言
+		if (defaultLang === 'cn') {
+			map.setLabelField(fengmap.FMLabelField.NAME);
+		} else {
+			map.setLabelField(fengmap.FMLabelField.ENAME);
+		}
+
+		map.on('loaded', function () {
+			// 2D3D切换/所有楼层显示/当前楼层 控件
+			var scrollFloorCtlOpt = {
+				position: fengmap.FMControlPosition.LEFT_TOP,
+				floorButtonCount: 5,
+				offset: {
+					x: 20,
+					y: 200,
+				},
+				viewModeControl: true,
+				floorModeControl: true,
+				needAllLayerBtn: false,
+			};
+			scrollFloorControl = new fengmap.FMToolbar(scrollFloorCtlOpt);
+			scrollFloorControl.addTo(map);
+
+			// 缩放控件
+			var scrollZoomCtlOpt = {
+				position: fengmap.FMControlPosition.LEFT_BOTTOM,
+				offset: {
+					x: 20,
+					y: -250,
+				},
+			};
+			var toolbar = new fengmap.FMZoomBar(scrollZoomCtlOpt);
+			toolbar.addTo(map);
+
+			// 指北针控件
+			var compass = new fengmap.FMCompass({
+				pointerImageURL: './images/pic-zbz@2x.png',
+				position: fengmap.FMControlPosition.LEFT_TOP,
+				offset: { x: 20, y: 130 },
+			});
+			compass.addTo(map);
+			// 指北针回正
+			compass.on('click', function () {
+				map.setRotation({
+					rotation: 0,
+					animate: true,
+					duration: 0.3,
+					finish: function () {
+						console.log('setRotation');
+					},
+				});
+			});
+
+			floorInfos = map.getFloorInfos();
+			// 初始化路径分析类
+			routeAnalyser = new fengmap.FMNaviWalkAnalyser({ map: map });
+			// 初始化搜索分析对象
+			var searchOption = {
+				mapID: options.mapID,
+				appName: options.appName,
+				key: options.key,
+			};
+			searchAnalyser = new fengmap.FMSearchAnalyser(searchOption);
+
+			// 初始化导航分析类
+			analyser = new fengmap.FMNaviWalkAnalyser({ map: map }, function () {
+				// 初始化人行导航对象
+				navi = new fengmap.FMNavigationWalk({
+					map: map,
+					analyser: analyser,
+				});
+			});
+
+			// 添加定位点marker
+			locationMarker = new fengmap.FMLocationMarker({
+				x: 0,
+				y: 0,
+				url: './images/bluedot-arrow.png',
+				// level: level,
+				size: 48,
+				height: 1,
+			});
+			locationMarker.addTo(map);
+
+			// 楼层信息
+			floorInfo = map.getFloorInfos();
+		});
+
+		// 地图加载进度
+		map.on('progress', function (e) {
+			if (e.progressBar === 100) {
+				// 地图加载完成
+				jsAndroid.jsCallAndroid('ready');
+				$('#loading').css('display', 'none');
+				$('#languageBox').css('display', 'block');
+			}
+		});
+
+		// 通过点击地图获取起点和终点
+		map.on('click', function (e) {
+			$('#endInput').val('');
+			$('#result_content').empty();
+
+			// 隐藏搜索框
+			hideSearch();
+			if (lineMarker) {
+				return;
+			}
+
+			if (domMarker) {
+				domMarker.remove();
+				domMarker = null;
+			}
+			const model = e.targets.find(
+				(item) => item.type === fengmap.FMType.MODEL
+			);
+
+			// 模型 非墙壁
+			if (model && model.typeID !== 300000) {
+				clickPoint = {
+					level: e.level,
+					x: model.x,
+					y: model.y,
+					name: defaultLang === 'cn' ? model.name : model.eName,
+				};
+				buildingInfo.style = 'display: block';
+				const buildingInfoName = document.getElementById('buildingInfoName');
+
+				if (defaultLang === 'cn') {
+					buildingInfoName.innerHTML = model.name;
+				} else {
+					buildingInfoName.innerHTML = model.eName;
+				}
+			}
+		});
+
+		// 墙面不可点击
+		map.pickFilterFunction = function (event) {
+			return !!event.data.name;
+		};
+
+		// 交换起终点
+		function onExchange() {
+			let temp = start;
+			start = dest;
+			dest = temp;
+			temp = $('#startInput').val();
+			const endValue = $('#endInput').val();
+			$('#endInput').val(temp);
+			$('#startInput').val(endValue);
+			clickPoint = start;
+			setStart();
+			clickPoint = dest;
+			setEnd();
+			naviAndDrawLine();
+		}
+
+		// 修改路径规划模式
+		function onChangeMode(buttonid) {
+			if (buttonid === 'best') {
+				$('#best').addClass('stairs_types_selected');
+				$('#shortest').removeClass('stairs_types_selected');
+				mode = fengmap.FMNaviMode.MODULE_BEST;
+			} else {
+				$('#shortest').addClass('stairs_types_selected');
+				$('#best').removeClass('stairs_types_selected');
+				mode = fengmap.FMNaviMode.MODULE_SHORTEST;
+			}
+
+			naviAndDrawLine();
+		}
+
+		// 显示选择起点终点的选项卡
+		function showDomMarker(position) {
+			if (domMarker) {
+				domMarker.remove();
+				domMarker = null;
+			}
+			domMarker = new fengmap.FMDomMarker({
+				x: position.x,
+				y: position.y,
+				domHeight: 80,
+				domWidth: 200,
+				anchor: fengmap.FMMarkerAnchor.BOTTOM,
+				content: `<div style=" display: inline-block; width: 200px; text-align: center;">
+				<div style="display: flex;margin-bottom: 10px; border-radius: 6px; background-color: white; text-align: center;">
+					<span id="clickStart" style="flex: 1; height: 30px; color: white;padding: 10px 16px; line-height: 30px; background-color: #2F65EE; border-bottom-left-radius: 6px; border-top-left-radius:6px; " onclick=setStart() ontouchstart=setStart()>作为起点</span>
+					<span style="flex: 1; height: 30px; padding: 10px 16px; line-height: 30px;" onclick=setEnd() ontouchstart=setEnd()>作为终点</span>
+				</div>
+				<div style="background-image: url('./images/marker.png');display: inline-block; width: 32px; height: 32px;background-size:100%;"></div>
+				</div>`,
+			});
+			var level = position.level;
+			var floor = map.getFloor(level);
+			domMarker.addTo(floor);
+		}
+
+		// 起点输入
+		$('#startInput').on('input propertychange', function () {
+			activeInput = 'startInput';
+			const inputValue = $('#startInput').val();
+			searchModel(inputValue);
+		});
+		//终点输入
+		$('#endInput').on('input propertychange', function () {
+			activeInput = 'endInput';
+			const inputValue = $('#endInput').val();
+			searchModel(inputValue);
+		});
+		// 起点输入
+		$('#startInput').on('focus', function () {
+			activeInput = 'startInput';
+		});
+		//终点输入
+		$('#endInput').on('focus', function () {
+			activeInput = 'endInput';
+		});
+
+		$('#clickStart').click(function () {
+			// 点击时要执行的代码
+			console.log('Start  Button clicked!');
+		});
+
+		// 关键字查询
+		function searchModel(keyword) {
+			if (!keyword || keyword === '') return;
+			var searchRequest = new fengmap.FMSearchRequest();
+			searchRequest.levels = [options.level]; // 只搜索level = 5的楼层
+			searchRequest.type = fengmap.FMType.MODEL;
+			searchRequest.addCondition({
+				keyword: keyword,
+			});
+			searchAnalyser.query(searchRequest, (result) => {
+				searchResult = result;
+				selectedIndex = -1;
+				$('#search_result').css('display', 'flex');
+				if (result.length == 0) {
+					$('#no_result').css('display', 'inline-block');
+					$('#result').css('display', 'none');
+				} else {
+					$('#no_result').css('display', 'none');
+					$('#result').css('display', '');
+				}
+				$('#result_content').empty();
+				result.forEach(function (item, index) {
+					const node = $(`<div class="search_result_item">
+										<div id='result_item_${index}' class="search_result_normal">
+											<div>
+												<div class="search_result_title">${
+													defaultLang === 'cn' ? item.name : item.ename
+												}</div>
+												<div class="search_result_position">
+													<span class="iconfont icon-weizhi"></span>
+													<span>${getFloorNameByGid(item.level)}</span>
+												</div>
+											</div>
+											<div class="search_result_icon"><i class="search_result_icon layui-icon">&#xe609;</i></div>
+										</div>
+									</div>`);
+					node.click(function () {
+						let status = 'destSelect';
+						onResultSelected(index, status);
+					});
+					$('#result_content').append(node);
+				});
+			});
+		}
+		// 设置起点图标和信息
+		function setStart(data) {
+			// 清除原来的起点图标
+			if (start) {
+				start.remove();
+			}
+
+			// 点击从这出发 后关闭底部建筑物信息框
+			const buildingInfo = document.getElementById('buildingInfo');
+			if (buildingInfo.display === 'none') {
+				return;
+			} else {
+				buildingInfo.style = 'none';
+			}
+
+			var navBottomBarInfoTopStart = document.getElementById(
+				'navBottomBarInfoTopStart'
+			);
+			if (data === undefined) {
+				start = { ...clickPoint };
+				var marker = new fengmap.FMImageMarker({
+					url: './images/startIcon.png',
+					x: clickPoint.x,
+					y: clickPoint.y,
+					level: clickPoint.level,
+					height: 3,
+					size: 32,
+				});
+				let level = clickPoint.level;
+				var floor = map.getFloor(level);
+				$('#startInput').val(clickPoint.name);
+				if (defaultLang === 'cn') {
+					navBottomBarInfoTopStart.innerHTML = `起点:${clickPoint.name}`;
+				} else {
+					navBottomBarInfoTopStart.innerHTML = `Start:${clickPoint.name}`;
+				}
+			} else {
+				start = data;
+				var marker = new fengmap.FMImageMarker({
+					url: './images/startIcon.png',
+					x: data.x,
+					y: data.y,
+					level: data.level,
+					height: 3,
+					size: 32,
+				});
+				let level = data.level;
+				var floor = map.getFloor(level);
+				$('#startInput').val(data.name);
+				if (defaultLang === 'cn') {
+					navBottomBarInfoTopStart.innerHTML = '我的位置';
+				} else {
+					navBottomBarInfoTopStart.innerHTML = 'Current Location';
+				}
+			}
+			marker.addTo(floor);
+			start = marker;
+			// 清除选项卡
+			domMarker?.remove();
+			domMarker = null;
+		}
+		// 设置终点图标和信息
+		function setEnd(type) {
+			if (type === 'searchBox') {
+				$('#panel').css('display', 'block');
+				$('#startBox').css('display', 'block');
+				$('#startBoxLine').css('display', 'block');
+				$('#searchCloseBtn').css('display', 'none');
+			}
+
+			// if (!start) {
+			// 	console.log('no start');
+			// 	if (objMessage === undefined) {
+			// 		androidFromCall();
+			// 	}
+			// 	let data = {
+			// 		x: constraintCoords.coords.x,
+			// 		y: constraintCoords.coords.y,
+			// 		level: constraintCoords.coords.level,
+			// 		name: '当前位置',
+			// 	};
+			// 	setStart(data);
+			// }
+
+			if (objMessage === undefined) {
+				androidFromCall();
+			}
+			let data = {
+				x: constraintCoords.coords.x,
+				y: constraintCoords.coords.y,
+				level: constraintCoords.coords.level,
+				name: defaultLang === 'cn' ? '当前位置' : 'Current Location',
+			};
+			setStart(data);
+			// 清除原来的终点图标
+			if (dest) {
+				dest.remove();
+			}
+
+			// 点击到这去 后关闭底部建筑物信息框
+			const buildingInfo = document.getElementById('buildingInfo');
+			if (buildingInfo.display === 'none') {
+				return;
+			} else {
+				buildingInfo.style = 'none';
+			}
+
+			const navBottomBarInfoTopDest = document.getElementById(
+				'navBottomBarInfoTopDest'
+			);
+			dest = { ...clickPoint };
+			var marker = new fengmap.FMImageMarker({
+				url: './images/destIcon.png',
+				x: clickPoint.x,
+				y: clickPoint.y,
+				level: clickPoint.level,
+				height: 3,
+				size: 32,
+			});
+			var level = clickPoint.level;
+			var floor = map.getFloor(level);
+			marker.addTo(floor);
+			dest = marker;
+			// 清除选项卡
+			domMarker?.remove();
+			domMarker = null;
+
+			$('#endInput').val(clickPoint.name);
+			if (defaultLang === 'cn') {
+				navBottomBarInfoTopDest.innerHTML = `终点:${clickPoint.name}`;
+			} else {
+				navBottomBarInfoTopDest.innerHTML = `Dest:${clickPoint.name}`;
+			}
+			const navStopArriveName = document.getElementById('navStopArriveName');
+			navStopArriveName.innerHTML = clickPoint.name;
+
+			$('#navStartBox').css('display', 'block');
+		}
+
+		// 分析路径，绘制路线
+		function naviAndDrawLine() {
+			if (!start || !dest) {
+				return;
+			}
+			if (lineMarker) {
+				lineMarker.remove();
+			}
+
+			resetNaviRoute();
+
+			const request = { start, dest, mode, priority };
+			routeAnalyser.route(request, function (result) {
+				$('#search_result').css('display', 'none');
+				$('#navi_result').css('display', 'block');
+				$('#navi_result').empty();
+				if (defaultLang === 'cn') {
+					$('#navi_result').append(
+						`<div class='navi_result_title'><span class='navi_result_normal'>全程</span> <span class='navi_result_highlight'>${result.distance.toFixed(
+							2
+						)}</span><span class='navi_result_normal'>米,预计用时</span><span class='navi_result_highlight'>${Math.ceil(
+							result.distance / walkSpeed
+						)}</span><span class='navi_result_normal'>分钟</span></div>`
+					);
+				} else {
+					$('#navi_result').append(
+						`<div class='navi_result_title'><span class='navi_result_normal'>Whole Course</span> <span class='navi_result_highlight'>${result.distance.toFixed(
+							2
+						)}</span><span class='navi_result_normal'>meters,Expected time</span><span class='navi_result_highlight'>${Math.ceil(
+							result.distance / walkSpeed
+						)}</span><span class='navi_result_normal'>minutes</span></div>`
+					);
+				}
+
+				$('#navi_result').append(`<ul class="layui-timeline" id='timeline'>`);
+				result.subs.forEach((item) => {
+					const direction = item.waypoint.direction.zh[1];
+					const node = $(`<li class="layui-timeline-item" onclick>
+				                                    <i class="layui-icon layui-timeline-axis"></i>
+				                                        <div class="layui-timeline-content layui-text">
+				                                            <img src='./images/directionImg/${directionImg[direction]}' width='20px' height='20px'/>
+				                                            <div class='navi_route_desc'>${item.instruction.zh}</div>
+				                                        </div>
+				                                </li>`);
+					node.click(function () {
+						onRouteClick(item);
+					});
+					$('#timeline').append(node);
+				});
+
+				segments = [];
+				let subs = result.subs;
+				var segment = new fengmap.FMSegment();
+				for (let index = 0; index < subs.length; index++) {
+					const leg = subs[index];
+					if (leg.levels[0] === leg.levels[1]) {
+						leg.waypoint.points.forEach((point) => {
+							point.z = 0.5;
+						});
+						if (segment.points) {
+							let points = [];
+							points.push(...leg.waypoint.points);
+							points.splice(0, 1);
+							segment.points = segment.points.concat(points);
+						} else {
+							segment.points = leg.waypoint.points;
+						}
+						segment.level = leg.levels[0];
+						if (index == subs.length - 1) {
+							segments.push(segment);
+						}
+					} else {
+						segments.push(segment);
+						segment = new fengmap.FMSegment();
+					}
+				}
+
+				line = new fengmap.FMLineMarker({
+					segments: segments,
+					smooth: true,
+					width: 12,
+				});
+				line.addTo(map);
+				lineMarker = line;
+			});
+		}
+
+		function onResultSelected(index, status) {
+			$('#search_result').css('display', 'none');
+			$('#searchCloseBtn').css('display', 'none');
+			selectedIndex = index;
+			const model = searchResult[index];
+			$(`#${activeInput}`).val(
+				model.name + ' ' + getFloorNameByGid(model.level)
+			);
+			clickPoint = {
+				level: model.level,
+				x: model.center.x,
+				y: model.center.y,
+				name: model.name,
+			};
+			if (activeInput === 'startInput') {
+				setStart();
+			} else {
+				setEnd();
+			}
+			if (status === 'destSelect') {
+				$('#startBox').css('display', 'block');
+				$('#startBoxLine').css('display', 'block');
+			}
+		}
+		// 路线被选中
+		function onRouteClick(item) {
+			const points = item.waypoint.points;
+			const routecenter = {
+				x: (points[0].x + points[1].x) / 2,
+				y: (points[0].y + points[1].y) / 2,
+			};
+			map.setCenter({
+				x: routecenter.x,
+				y: routecenter.y,
+				animate: true,
+				finish: function () {
+					map.setZoom({ zoom: 21, animate: true });
+				},
+			});
+		}
+
+		function naviRoute() {
+			navi.setLanguage(fengmap.FMLanguageType.EN);
+			// 设置起终点
+			navi.setStartPoint(start);
+			navi.setDestPoint(dest);
+
+			navi.route(
+				{
+					mode: fengmap.FMNaviMode.MODULE_SHORTEST, // 导航中路径规划模式
+					priority: fengmap.FMNaviPriority.PRIORITY_DEFAULT, // 导航中的路线规划梯类优先级
+				},
+				function (result) {
+					// 导航分析成功回调
+					navi.drawNaviLine({ style: { width: 12 } });
+				},
+				function (result) {
+					// 导航分析失败回调
+					console.log('failed', result);
+				}
+			);
+
+			navi.on('walking', nag);
+
+			// var startGname = getFloorNameByGid(objMessage.data.groupID);
+			// var floorDom = document.getElementById('floorTips');
+			// floorDom.innerHTML = startGname;
+		}
+
+		/* 导航按钮控制 */
+		function handleBtn(type, isClick) {
+			if (type === 'start') {
+				if (objMessage === undefined) {
+					if (defaultLang === 'cn') {
+						setNotification('获取不到当前定位');
+					} else {
+						setNotification('Unable to obtain the current location');
+					}
+					return;
+				}
+				if (start === undefined || dest === undefined) {
+					if (defaultLang === 'cn') {
+						setNotification('请先设定起点与终点');
+					} else {
+						setNotification('Please set the starting and ending points first');
+					}
+					return;
+				}
+
+				hideSearch();
+
+				$('#closeMap').css('display', 'none');
+				$('#searchBar').css('display', 'none');
+				if (defaultLang === 'cn') {
+					fmtts('开始导航');
+				} else {
+					fmtts('start navigation');
+				}
+
+				isFinishNav = true;
+
+				naviRoute();
+
+				// 切换单楼层展示
+				map.setVisibleLevels([start.level]);
+				map.setFitView(map.getBound());
+
+				navi.locate({
+					x: constraintCoords.coords.x,
+					y: constraintCoords.coords.y,
+					level: constraintCoords.coords.level,
+				});
+			} else if (type === 'navExit') {
+				isFinishNav = false;
+				// 退出导航
+				$('#navBottomBar').css('display', 'none');
+				$('#navInfo').css('display', 'none');
+				$('#searchBar').css('display', 'block');
+				$('#closeMap').css('display', 'block');
+				stopBtn(isClick);
+			} else if (type === 'openSearchBox') {
+				// 点击搜索栏
+				$('#searchBar').css('display', 'none');
+				$('#startBox').css('display', 'none');
+				$('#startBoxLine').css('display', 'none');
+				$('#panel').css('display', 'block');
+				const input = document.getElementById('endInput');
+				input.focus();
+			} else if (type === 'closeSearchBox') {
+				// 关闭搜索框
+				$('#panel').css('display', 'none');
+				$('#searchBar').css('display', 'block');
+				$('#endInput').val('');
+				$('#result_content').empty();
+				$('#result').css('display', 'none');
+				$('#search_result').css('display', 'none');
+			} else if (type === 'closeMap') {
+				// 关闭地图
+				jsAndroid.jsCallAndroid('closeMap');
+			} else if (type === 'closeBuildingInfo') {
+				// 关闭底部建筑物详情
+				$('#buildingInfo').css('display', 'none');
+			} else if (type === 'cancel') {
+				//取消导航
+				$('#navStartBox').css('display', 'none');
+				$('#panel').css('display', 'none');
+				$('#endInput').val('');
+				$('#searchCloseBtn').css('display', 'block');
+				$('#searchBar').css('display', 'block');
+				start.remove();
+				dest.remove();
+			}
+		}
+
+		// 结束导航
+		function stopBtn(isClick) {
+			if (defaultLang === 'cn') {
+				fmtts('导航结束');
+			} else {
+				fmtts('Navigation End');
+			}
+
+			if (isClick === false) {
+				$('#navStopBox').css('display', 'block');
+			}
+
+			start.remove();
+			start = null;
+			dest.remove();
+			navi.clearAll();
+
+			navi.off({ type: 'complete', function: () => {} });
+
+			map.setRotation({
+				rotation: 0,
+				animate: true,
+				duration: 0.3,
+				finish: function () {
+					console.log('setRotation');
+				},
+			});
+
+			routeAnalyser.dispose();
+
+			$('#navInfo').css('display', 'none');
+			$('#navBottomBar').css('display', 'none');
+			$('#searchCloseBtn').css('display', 'block');
+
+			$('#startInput').val('');
+			$('#endInput').val('');
+
+			routeAnalyser = new fengmap.FMNaviWalkAnalyser({ map: map });
+		}
+
+		function nag(data) {
+			$('#buildingInfo').css('display', 'none');
+			$('#navStartBox').css('display', 'none');
+			$('#navInfo').css('display', 'block');
+			$('#navBottomBar').css('display', 'block');
+
+			if (data.remain <= 1.5) {
+				handleBtn('navExit', false);
+			}
+			// 更新locationMarker位置及角度
+			setLocationMakerPosition(data.point, data.angle);
+			// 更新路线信息
+			updateUI(data);
+
+			/* 路线偏移逻辑 */
+			distance = data.distance;
+			console.log('偏移距离：', distance);
+			if (distance > offsetDis) {
+				if (defaultLang === 'cn') {
+					fmtts('您已偏航，已为您重新规划路线');
+				} else {
+					fmtts('You have deviated and the route has been re planned for you');
+				}
+
+				resetNaviRoute();
+			}
+		}
+
+		function setLocationMakerPosition(coord, angle) {
+			if (angle) {
+				locationMarker.rotateTo({
+					heading: -angle,
+					duration: 0.5,
+				});
+
+				map.setRotation({
+					animate: true,
+					duration: 0.5,
+					rotation: angle,
+				});
+			}
+
+			var level = locationMarker.level;
+			if (level !== coord.level) {
+				map.setLevel({
+					animate: true,
+					level: coord.level,
+				});
+			}
+
+			locationMarker.moveTo({
+				x: coord.x,
+				y: coord.y,
+				level: coord.level,
+				animate: false,
+				duration: 0.5,
+				finish: function () {
+					console.log('动画完成回调！');
+				},
+			});
+
+			// 定位点旋转至指定角度
+			locationMarker.rotateTo({
+				heading: constraintCoords.angle,
+			});
+		}
+
+		/* 路线偏移，重新路径规划 */
+		function resetNaviRoute(params) {
+			console.log('路线偏移，重新进行路径规划！');
+			// 清空当前导航线
+			navi.clearNaviLine();
+
+			// 更新起点坐标
+			var newStart = {
+				x: constraintCoords.coords.x,
+				y: constraintCoords.coords.y,
+				level: constraintCoords.coords.level,
+				height: 3,
+				url: './images/startIcon.png',
+				size: 32,
+			};
+			navi.setStartPoint(newStart);
+			navi.route(
+				{
+					mode: fengmap.FMNaviMode.MODULE_SHORTEST, // 导航中路径规划模式
+					priority: fengmap.FMNaviPriority.PRIORITY_DEFAULT, // 导航中的路线规划梯类优先级
+				},
+				function (result) {
+					// 导航分析成功回调
+					navi.drawNaviLine({ passed: true });
+					setLocationMakerPosition(newStart);
+					navi.locate(
+						{
+							x: constraintCoords.coords.x,
+							y: constraintCoords.coords.y,
+							level: constraintCoords.coords.level,
+						},
+						constraintCoords.angle
+					);
+				},
+				function (result) {
+					// 导航分析失败回调
+					console.log('failed', result);
+				}
+			);
+		}
+
+		var oldNavInfo; //上一条路线信息 - 用于播报
+
+		function updateUI(data) {
+			let navInfo = document.getElementById('navInfoText');
+			let navInfoRemain = document.getElementById('navBottomBarInfoBottom');
+
+			// 获取导航过程路线信息
+			var instruction;
+			if (defaultLang == 'cn') {
+				instruction = navi.naviResult.subs[data.index].instruction.zh;
+			} else {
+				instruction = navi.naviResult.subs[data.index].instruction.en;
+			}
+
+			//距离终点 剩余距离
+			var remain = data.remain.toFixed(2);
+			if (remain <= distance) {
+				if (isFinishNav) {
+					handleBtn('navExit', false);
+				}
+			} else {
+				// 顶部导航信息 方向图标
+				const direction =
+					navi.naviResult.subs[data.index].waypoint.direction.zh[1];
+				let imgInfo = document.getElementById('navImg');
+				imgInfo.src = `./images/directionImg/${directionImg[direction]}`;
+
+				if (oldNavInfo === instruction) {
+					return;
+				} else {
+					setTimeout(() => {
+						fmtts(instruction);
+					}, 1500);
+					oldNavInfo = instruction;
+				}
+
+				navInfo.innerHTML = instruction;
+				if (defaultLang === 'cn') {
+					navInfoRemain.innerHTML = `距离终点：${remain}米，${Math.ceil(
+						remain / walkSpeed
+					)}分钟`;
+				} else {
+					navInfoRemain.innerHTML = `Distance to endpoint:${remain}meters，${Math.ceil(
+						remain / walkSpeed
+					)}minutes`;
+				}
+			}
+
+			// 获取楼层名称
+			// var gname = getFloorNameByGid(data.level);
+			// var floorDom = document.getElementById('floorTips');
+			// floorDom.innerHTML = gname;
+		}
+
+		/* 根据楼层id获取楼层name */
+		function getFloorNameByGid(level) {
+			var gname = floorInfo.find(function (item) {
+				return item.level === level;
+			}).name;
+			return gname;
+		}
+	</script>
+</html>

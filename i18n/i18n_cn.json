@@ -1,0 +1,19 @@
+{
+	"main.searchBoxText": "搜索商品",
+	"navStopBox.navStopTitle": "您已到达目的地附近，导航结束",
+	"navStopBox.navStopButton": "关闭",
+	"StartDestBox.startInput": "请输入起点",
+	"StartDestBox.endInput": "请输入终点",
+	"search_result.no_result_title": "暂无搜索结果",
+	"search_result.resultTitle": "搜索结果",
+	"buildingInfo.buildingInfoName": "建筑物",
+	"buildingInfo.from": "从这走",
+	"buildingInfo.arrive": "到这去",
+	"navStartBox.startNav": "开始导航",
+	"navBottomBar.navBottomBarExit": "退出",
+	"navBottomBar.navBottomBarInfoTopStart": "当前",
+	"navBottomBar.navBottomBarInfoTopDest": "终点",
+	"navBottomBar.navBottomBarInfoBottom": "剩余",
+	"languageBox.title": "中文",
+	"navStopButtonBox.close": "关闭"
+}
