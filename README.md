@@ -7,5 +7,3 @@
 ###### defaultLang：语言 =>en,cn - 默认英文;
 
 ###### distance: 距离终点距离结束导航 => number - 默认 1.5
-
-#### 测试环境地址:https://location-inside-js.superhii.com/
